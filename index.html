@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sky Building Projects Dashboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f6fa;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --text: #152033;
+      --muted: #68758a;
+      --border: #dfe6ef;
+      --blue: #2563eb;
+      --blue-dark: #1e40af;
+      --green: #15803d;
+      --red: #c2413b;
+      --amber: #b45309;
+      --purple: #7c3aed;
+      --shadow: 0 8px 24px rgba(15, 23, 42, .07);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .shell { width: min(1440px, 100%); margin: 0 auto; padding: 22px; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 18px;
+      margin-bottom: 18px;
+    }
+    .brand h1 { font-size: clamp(22px, 3vw, 32px); line-height: 1.1; margin: 0; letter-spacing: -.03em; }
+    .brand p { margin: 5px 0 0; color: var(--muted); }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    .btn {
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+      min-height: 40px; padding: 8px 13px; border-radius: 10px; font-weight: 700;
+      transition: .15s ease;
+    }
+    .btn:hover { border-color: #b9c6d8; transform: translateY(-1px); }
+    .btn.primary { background: var(--blue); border-color: var(--blue); color: white; }
+    .btn.primary:hover { background: var(--blue-dark); }
+    .btn.active { background: #e8efff; color: var(--blue-dark); border-color: #a9bff6; }
+    .btn:disabled { cursor: wait; opacity: .6; transform: none; }
+    .controls {
+      display: flex; flex-wrap: wrap; align-items: end; gap: 10px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px; box-shadow: var(--shadow); margin-bottom: 16px;
+    }
+    .control { display: grid; gap: 5px; }
+    .control label { color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+    select, input[type="date"] {
+      height: 40px; border: 1px solid var(--border); border-radius: 9px;
+      background: white; color: var(--text); padding: 0 10px;
+    }
+    .custom-dates { display: none; gap: 10px; flex-wrap: wrap; align-items: end; }
+    .custom-dates.visible { display: flex; }
+    .grow { flex: 1; }
+    .status {
+      display: flex; align-items: center; gap: 8px; min-height: 40px; color: var(--muted);
+      padding: 0 6px; margin-left: auto;
+    }
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; background: #94a3b8; }
+    .status-dot.ok { background: #22c55e; }
+    .status-dot.busy { background: #f59e0b; animation: pulse 1.1s infinite; }
+    .status-dot.err { background: #ef4444; }
+    @keyframes pulse { 50% { opacity: .35; } }
+    .notice {
+      border: 1px solid #f1d28a; background: #fffbeb; color: #713f12;
+      border-radius: var(--radius); padding: 18px; margin: 0 0 16px;
+    }
+    .notice h2 { margin: 0 0 7px; font-size: 18px; }
+    .notice p { margin: 5px 0; }
+    .hidden { display: none !important; }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+    .kpi {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 17px 18px; min-width: 0;
+    }
+    .kpi-label { color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .055em; }
+    .kpi-value { margin-top: 5px; font-size: clamp(22px, 3vw, 32px); font-weight: 850; letter-spacing: -.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kpi-sub { color: var(--muted); margin-top: 4px; font-size: 12px; }
+    .kpi.income { border-top: 4px solid var(--blue); }
+    .kpi.expense { border-top: 4px solid var(--amber); }
+    .kpi.profit { border-top: 4px solid var(--green); }
+    .kpi.profit.negative { border-top-color: var(--red); }
+    .kpi.cash { border-top: 4px solid var(--purple); }
+    .chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .chart-stack { display: grid; gap: 14px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); min-width: 0; overflow: hidden;
+    }
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 4px; }
+    .card-head h2 { margin: 0; font-size: 17px; }
+    .card-head span { color: var(--muted); font-size: 12px; }
+    .canvas-wrap { height: 270px; padding: 8px 12px 14px; position: relative; }
+    .canvas-wrap.small { height: 225px; }
+    canvas { width: 100%; height: 100%; display: block; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 12px; }
+    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; }
+    .table-card { margin-bottom: 18px; }
+    .table-tools { display: flex; align-items: center; gap: 8px; }
+    .table-wrap { overflow: auto; padding: 10px 16px 18px; }
+    table { width: 100%; border-collapse: collapse; min-width: 620px; }
+    th { text-align: left; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding: 10px; border-bottom: 1px solid var(--border); }
+    th:last-child, td:last-child { text-align: right; }
+    td { padding: 9px 10px; border-bottom: 1px solid #edf1f6; }
+    tr.group > td { font-weight: 800; background: var(--surface-2); }
+    tr.total > td { font-weight: 850; border-top: 2px solid #cbd5e1; }
+    .row-name { display: flex; align-items: center; gap: 7px; min-width: 260px; }
+    .indent { display: inline-block; flex: 0 0 auto; }
+    .caret { color: #94a3b8; width: 10px; }
+    .amount.negative { color: var(--red); }
+    .empty { color: var(--muted); text-align: center; padding: 28px; }
+    .error-box { border-color: #fecaca; background: #fff1f2; color: #881337; }
+    .footnote { color: var(--muted); font-size: 12px; text-align: center; margin: 8px 0 0; }
+
+    @media (max-width: 1000px) {
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .chart-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 680px) {
+      .shell { padding: 12px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .actions { justify-content: flex-start; }
+      .kpis { grid-template-columns: 1fr; }
+      .status { width: 100%; margin-left: 0; }
+    }
+    @media print {
+      body { background: white; }
+      .shell { max-width: none; padding: 0; }
+      .controls, .actions, .notice { display: none !important; }
+      .card, .kpi { box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Sky Building Projects</h1>
+        <p id="period-subtitle">Financial dashboard</p>
+      </div>
+      <div class="actions">
+        <button class="btn active" id="charts-toggle" type="button">Charts On</button>
+        <button class="btn" id="refresh-btn" type="button">Refresh</button>
+      </div>
+    </header>
+
+    <section class="controls" aria-label="Dashboard controls">
+      <div class="control">
+        <label for="period-select">Reporting period</label>
+        <select id="period-select">
+          <option value="currentFY">Current fiscal year</option>
+          <option value="previousFY">Previous fiscal year</option>
+          <option value="last12">Last 12 months</option>
+          <option value="custom">Custom range</option>
+        </select>
+      </div>
+      <div class="custom-dates" id="custom-dates">
+        <div class="control">
+          <label for="custom-from">From</label>
+          <input id="custom-from" type="date">
+        </div>
+        <div class="control">
+          <label for="custom-to">To</label>
+          <input id="custom-to" type="date">
+        </div>
+        <button class="btn primary" id="apply-custom" type="button">Apply</button>
+      </div>
+      <div class="grow"></div>
+      <div class="status" role="status" aria-live="polite">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Connecting to Manager…</span>
+      </div>
+    </section>
+
+    <section class="notice hidden" id="setup-card">
+      <h2>One-time dashboard setup</h2>
+      <p>This creates two report definitions named <strong>Dashboard Data — Managed by Extension</strong>: one P&amp;L and one balance sheet.</p>
+      <p>It does not create, edit, or delete invoices, payments, journal entries, accounts, or any other accounting transactions.</p>
+      <button class="btn primary" id="setup-btn" type="button">Set up dashboard reports</button>
+    </section>
+
+    <section class="notice error-box hidden" id="error-card">
+      <h2>Dashboard could not load</h2>
+      <p id="error-message"></p>
+      <button class="btn" id="retry-btn" type="button">Try again</button>
+    </section>
+
+    <div id="dashboard" class="hidden">
+      <section class="kpis" aria-label="Key financial indicators">
+        <article class="kpi income">
+          <div class="kpi-label">Income</div>
+          <div class="kpi-value" id="kpi-income">—</div>
+          <div class="kpi-sub" id="kpi-income-sub">Selected period</div>
+        </article>
+        <article class="kpi expense">
+          <div class="kpi-label">Expenses</div>
+          <div class="kpi-value" id="kpi-expenses">—</div>
+          <div class="kpi-sub" id="kpi-expenses-sub">Selected period</div>
+        </article>
+        <article class="kpi profit" id="profit-card">
+          <div class="kpi-label">Net profit</div>
+          <div class="kpi-value" id="kpi-profit">—</div>
+          <div class="kpi-sub" id="kpi-margin">Profit margin —</div>
+        </article>
+        <article class="kpi cash">
+          <div class="kpi-label">Cash</div>
+          <div class="kpi-value" id="kpi-cash">—</div>
+          <div class="kpi-sub" id="kpi-cash-sub">Balance-sheet value</div>
+        </article>
+      </section>
+
+      <section id="charts-section" class="chart-grid">
+        <div class="chart-stack">
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h2>Income vs expenses</h2>
+                <span>Monthly activity</span>
+              </div>
+              <div class="legend"><span><i style="background:#2563eb"></i>Income</span><span><i style="background:#f59e0b"></i>Expenses</span></div>
+            </div>
+            <div class="canvas-wrap"><canvas id="income-chart"></canvas></div>
+          </article>
+          <article class="card">
+            <div class="card-head">
+              <div><h2>Net profit trend</h2><span>Monthly profit or loss</span></div>
+            </div>
+            <div class="canvas-wrap small"><canvas id="profit-chart"></canvas></div>
+          </article>
+        </div>
+        <article class="card">
+          <div class="card-head">
+            <div><h2>Expense breakdown</h2><span>Selected period</span></div>
+          </div>
+          <div class="canvas-wrap"><canvas id="expense-chart"></canvas></div>
+          <div class="table-wrap" style="padding-top:0"><div id="expense-legend" class="legend"></div></div>
+        </article>
+      </section>
+
+      <section class="card table-card">
+        <div class="card-head">
+          <div><h2>Profit and loss detail</h2><span id="detail-period">Selected period</span></div>
+          <div class="table-tools">
+            <button class="btn" id="expand-btn" type="button">Expand all</button>
+            <button class="btn" id="collapse-btn" type="button">Collapse groups</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Account</th><th>Amount</th></tr></thead>
+            <tbody id="pl-body"><tr><td colspan="2" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <p class="footnote">Figures are calculated by Manager.io on an accrual basis. Dashboard report definitions are maintained by this extension.</p>
+  </main>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const REPORT_MARKER = 'Dashboard Data — Managed by Extension';
+    const PREF_KEY = 'sky-manager-dashboard-v1';
+    const COLORS = ['#2563eb','#f59e0b','#7c3aed','#14b8a6','#ef4444','#84cc16','#0ea5e9','#f97316','#8b5cf6','#64748b'];
+    let managerOrigin = null;
+    let reportRefs = { pl: null, bs: null };
+    let currentData = null;
+    let collapsed = true;
+
+    const $ = id => document.getElementById(id);
+    const els = {
+      period: $('period-select'), customDates: $('custom-dates'), customFrom: $('custom-from'), customTo: $('custom-to'),
+      applyCustom: $('apply-custom'), refresh: $('refresh-btn'), chartsToggle: $('charts-toggle'), charts: $('charts-section'),
+      setup: $('setup-card'), setupBtn: $('setup-btn'), error: $('error-card'), errorMessage: $('error-message'), retry: $('retry-btn'),
+      dashboard: $('dashboard'), statusDot: $('status-dot'), statusText: $('status-text'), periodSubtitle: $('period-subtitle'),
+      plBody: $('pl-body'), detailPeriod: $('detail-period'), expand: $('expand-btn'), collapse: $('collapse-btn')
+    };
+
+    function setStatus(kind, text) {
+      els.statusDot.className = 'status-dot' + (kind ? ' ' + kind : '');
+      els.statusText.textContent = text;
+    }
+
+    function showError(message) {
+      els.errorMessage.textContent = message;
+      els.error.classList.remove('hidden');
+      setStatus('err', 'Needs attention');
+    }
+
+    function clearError() { els.error.classList.add('hidden'); }
+
+    function api(method, path, body) {
+      return new Promise((resolve, reject) => {
+        if (window.parent === window) return reject(new Error('Open this page from inside Manager.io Extensions.'));
+        const requestId = crypto.randomUUID();
+        const timer = setTimeout(() => {
+          window.removeEventListener('message', handler);
+          reject(new Error('Manager did not respond within 20 seconds.'));
+        }, 20000);
+        function handler(event) {
+          if (event.source !== window.parent) return;
+          if (managerOrigin && event.origin !== managerOrigin) return;
+          if (!event.data?.type?.endsWith('-response') || event.data.requestId !== requestId) return;
+          clearTimeout(timer);
+          window.removeEventListener('message', handler);
+          if (!managerOrigin && event.origin) managerOrigin = event.origin;
+          const payload = event.data.body;
+          const status = Number(event.data.status || 200);
+          if (event.data.error || status >= 400 || (payload && typeof payload === 'object' && payload.error)) {
+            reject(new Error(event.data.error || payload?.message || payload?.error || `Manager API request failed (${status}).`));
+          } else resolve(payload);
+        }
+        window.addEventListener('message', handler);
+        window.parent.postMessage({ type: 'api-request', method, path, ...(body === undefined ? {} : { body }), requestId }, '*');
+      });
+    }
+
+    const pad = n => String(n).padStart(2, '0');
+    function isoDate(date) { return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T00:00:00`; }
+    function inputDate(date) { return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`; }
+    function parseLocalDate(value) {
+      const [y,m,d] = value.split('-').map(Number);
+      return new Date(y, m-1, d);
+    }
+    function monthLabel(date) { return date.toLocaleDateString(undefined, { month: 'short', year: '2-digit' }); }
+    function longDate(date) { return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); }
+
+    function getRange(mode = els.period.value) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      let from, to, label;
+      if (mode === 'previousFY') {
+        from = new Date(today.getFullYear()-1, 0, 1);
+        to = new Date(today.getFullYear()-1, 11, 31);
+        label = `Previous fiscal year · ${today.getFullYear()-1}`;
+      } else if (mode === 'last12') {
+        from = new Date(today.getFullYear(), today.getMonth()-11, 1);
+        to = today;
+        label = `Last 12 months · ${longDate(from)} – ${longDate(to)}`;
+      } else if (mode === 'custom') {
+        if (!els.customFrom.value || !els.customTo.value) throw new Error('Choose both custom dates.');
+        from = parseLocalDate(els.customFrom.value); to = parseLocalDate(els.customTo.value);
+        if (from > to) throw new Error('The custom start date must be before the end date.');
+        label = `Custom · ${longDate(from)} – ${longDate(to)}`;
+      } else {
+        from = new Date(today.getFullYear(), 0, 1);
+        to = today;
+        label = `Current fiscal year · ${today.getFullYear()}`;
+      }
+      return { from, to, label };
+    }
+
+    function buildPeriods(range) {
+      const periods = [{ fromDate: isoDate(range.from), toDate: isoDate(range.to), division: null, columnName: 'Selected period' }];
+      let cursor = new Date(range.from.getFullYear(), range.from.getMonth(), 1);
+      const last = new Date(range.to.getFullYear(), range.to.getMonth(), 1);
+      while (cursor <= last) {
+        const monthStart = new Date(cursor);
+        const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth()+1, 0);
+        const clippedFrom = monthStart < range.from ? range.from : monthStart;
+        const clippedTo = monthEnd > range.to ? range.to : monthEnd;
+        periods.push({ fromDate: isoDate(clippedFrom), toDate: isoDate(clippedTo), division: null, columnName: monthLabel(cursor) });
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth()+1, 1);
+      }
+      return periods;
+    }
+
+    async function batch(path) {
+      const data = await api('GET', `/api4/${path}?PageSize=100`);
+      return Array.isArray(data?.items) ? data.items : [];
+    }
+
+    function normalizeKey(value) {
+      if (typeof value === 'string') return value.replace(/^"|"$/g, '');
+      return value?.key || value?.id || value?.value || null;
+    }
+
+    function plValue(periods, existing = {}) {
+      return {
+        title: existing.title ?? 'Financial Dashboard Data', description: REPORT_MARKER, periods,
+        accountingMethod: 0, rounding: 0, groupsToCollapse: null,
+        footer: 'This report definition is maintained by the Sky Building Projects dashboard extension.',
+        accountCodes: false, excludeZeroBalances: false
+      };
+    }
+
+    function bsValue(date, existing = {}) {
+      return {
+        title: existing.title ?? 'Dashboard Balance Data', description: REPORT_MARKER,
+        periods: [{ date: isoDate(date), division: null, columnName: 'Current' }],
+        accountingMethod: 0, rounding: 0, layout: existing.layout ?? 0, groupsToCollapse: null,
+        footer: 'This report definition is maintained by the Sky Building Projects dashboard extension.',
+        accountCodes: false, excludeZeroBalances: false
+      };
+    }
+
+    async function locateReports() {
+      const [pls, bss] = await Promise.all([batch('profit-and-loss-statement-batch'), batch('balance-sheet-batch')]);
+      const pl = pls.find(x => x?.item?.description === REPORT_MARKER);
+      const bs = bss.find(x => x?.item?.description === REPORT_MARKER);
+      reportRefs.pl = pl ? { key: pl.key || pl.item?.key, item: pl.item } : null;
+      reportRefs.bs = bs ? { key: bs.key || bs.item?.key, item: bs.item } : null;
+      return Boolean(reportRefs.pl && reportRefs.bs);
+    }
+
+    async function createReport(type, value) {
+      const key = normalizeKey(await api('POST', `/api4/${type}`, { Value: value }));
+      if (!key) throw new Error(`Manager did not return a key for the new ${type} report.`);
+      return { key, item: value };
+    }
+
+    async function setupReports() {
+      clearError(); setBusy(true); setStatus('busy', 'Creating dashboard report definitions…');
+      try {
+        const range = getRange();
+        if (!reportRefs.pl) reportRefs.pl = await createReport('profit-and-loss-statement', plValue(buildPeriods(range)));
+        if (!reportRefs.bs) reportRefs.bs = await createReport('balance-sheet', bsValue(range.to));
+        els.setup.classList.add('hidden');
+        await loadDashboard();
+      } catch (error) { showError(error.message); }
+      finally { setBusy(false); }
+    }
+
+    function samePeriods(a, b, fields) {
+      const clean = (arr) => (arr || []).map(p => Object.fromEntries(fields.map(f => [f, p?.[f] ?? null])));
+      return JSON.stringify(clean(a)) === JSON.stringify(clean(b));
+    }
+
+    async function updateReports(range) {
+      const periods = buildPeriods(range);
+      if (!samePeriods(reportRefs.pl.item?.periods, periods, ['fromDate','toDate','division','columnName'])) {
+        const value = plValue(periods, reportRefs.pl.item);
+        await api('PUT', '/api4/profit-and-loss-statement', { Key: reportRefs.pl.key, Value: value });
+        reportRefs.pl.item = value;
+      }
+      const bsPeriods = [{ date: isoDate(range.to), division: null, columnName: 'Current' }];
+      if (!samePeriods(reportRefs.bs.item?.periods, bsPeriods, ['date','division','columnName'])) {
+        const value = bsValue(range.to, reportRefs.bs.item);
+        await api('PUT', '/api4/balance-sheet', { Key: reportRefs.bs.key, Value: value });
+        reportRefs.bs.item = value;
+      }
+    }
+
+    async function getViews() {
+      return Promise.all([
+        api('GET', `/api4/profit-and-loss-statement-view?Key=${encodeURIComponent(reportRefs.pl.key)}`),
+        api('GET', `/api4/balance-sheet-view?Key=${encodeURIComponent(reportRefs.bs.key)}`)
+      ]);
+    }
+
+    function items(rowCollection) { return Array.isArray(rowCollection?.items) ? rowCollection.items : []; }
+    function rowValues(row) {
+      const cells = Array.isArray(row?.cells) ? row.cells : (Array.isArray(row?.rows?.totalCells) ? row.rows.totalCells : []);
+      return cells.map(c => Number(c?.value || 0));
+    }
+    function at(values, index) { return Number(values[index] || 0); }
+    function topRows(report) { return items(report?.rows); }
+    function isExpense(row) { return /^\s*Less\s*:/i.test(row?.displayName || ''); }
+    function isFinalProfit(row) { return /net\s+profit|profit\s*\(loss\)/i.test(row?.displayName || '') && row?.isTotalRow; }
+
+    function summarizePL(report) {
+      const rows = topRows(report);
+      const incomeRows = rows.filter(r => !r?.isTotalRow && !isExpense(r));
+      const expenseRows = rows.filter(r => !r?.isTotalRow && isExpense(r));
+      const final = [...rows].reverse().find(isFinalProfit) || rows[rows.length-1];
+      const count = Math.max(1, report?.columns?.length || 1);
+      const income = Array.from({length: count}, (_, i) => incomeRows.reduce((s,r) => s + at(rowValues(r),i), 0));
+      const expenses = Array.from({length: count}, (_, i) => expenseRows.reduce((s,r) => s + Math.abs(at(rowValues(r),i)), 0));
+      const profit = Array.from({length: count}, (_, i) => at(rowValues(final),i));
+      const expenseGroups = expenseRows.map(r => ({ name: (r.displayName || 'Expense').replace(/^\s*Less\s*:\s*/i,''), value: Math.abs(at(rowValues(r),0)) })).filter(x => x.value !== 0);
+      return { income, expenses, profit, expenseGroups };
+    }
+
+    function findCash(report) {
+      const exact = /^(cash on hand|cash at bank|cash and cash equivalents|bank and cash accounts)$/i;
+      let fallback = 0, fallbackFound = false;
+      function visit(rows) {
+        for (const row of rows) {
+          const name = String(row?.displayName || '').trim();
+          const value = at(rowValues(row), 0);
+          if (exact.test(name)) return { found: true, value };
+          if (/cash|checking|savings|bank account/i.test(name) && !/charge|credit card|loan/i.test(name) && !items(row?.rows).length) {
+            fallback += value; fallbackFound = true;
+          }
+          const nested = visit(items(row?.rows));
+          if (nested.found) return nested;
+        }
+        return { found: false, value: 0 };
+      }
+      const result = visit(topRows(report));
+      return result.found ? result.value : (fallbackFound ? fallback : null);
+    }
+
+    const money = value => value == null ? '—' : new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits: 2 }).format(value);
+    const signedMoney = value => value < 0 ? `(${money(Math.abs(value))})` : money(value);
+
+    function updateKpis(summary, cash, range) {
+      $('kpi-income').textContent = money(summary.income[0]);
+      $('kpi-expenses').textContent = money(summary.expenses[0]);
+      $('kpi-profit').textContent = signedMoney(summary.profit[0]);
+      $('kpi-cash').textContent = money(cash);
+      const margin = summary.income[0] ? summary.profit[0] / summary.income[0] * 100 : null;
+      $('kpi-margin').textContent = margin == null ? 'Profit margin —' : `Profit margin ${margin.toFixed(1)}%`;
+      $('profit-card').classList.toggle('negative', summary.profit[0] < 0);
+      $('kpi-income-sub').textContent = `${longDate(range.from)} – ${longDate(range.to)}`;
+      $('kpi-expenses-sub').textContent = `${longDate(range.from)} – ${longDate(range.to)}`;
+      $('kpi-cash-sub').textContent = cash == null ? 'Cash account was not identified' : `As of ${longDate(range.to)}`;
+    }
+
+    function canvasContext(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+
+    function compactNumber(v) {
+      const a = Math.abs(v);
+      if (a >= 1e6) return `${(v/1e6).toFixed(a >= 1e7 ? 0 : 1)}m`;
+      if (a >= 1e3) return `${(v/1e3).toFixed(a >= 1e4 ? 0 : 1)}k`;
+      return String(Math.round(v));
+    }
+
+    function drawAxes(ctx,w,h,min,max,labels) {
+      const pad = { l:52, r:14, t:12, b:35 }, plotW=w-pad.l-pad.r, plotH=h-pad.t-pad.b;
+      ctx.font='11px system-ui'; ctx.fillStyle='#7b8799'; ctx.strokeStyle='#e5eaf1'; ctx.lineWidth=1;
+      for(let i=0;i<=4;i++){
+        const y=pad.t+plotH*i/4, val=max-(max-min)*i/4;
+        ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.stroke();
+        ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.fillText(compactNumber(val),pad.l-7,y);
+      }
+      const step=Math.max(1,Math.ceil(labels.length/8));
+      labels.forEach((label,i)=>{ if(i%step && i!==labels.length-1)return; const x=pad.l+plotW*(i+.5)/Math.max(1,labels.length); ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(label,x,h-pad.b+9); });
+      return { ...pad, plotW, plotH, y: v => pad.t + (max-v)/(max-min||1)*plotH };
+    }
+
+    function drawBars(canvas, labels, a, b) {
+      const {ctx,w,h}=canvasContext(canvas); ctx.clearRect(0,0,w,h);
+      if(!labels.length){ctx.fillStyle='#7b8799';ctx.textAlign='center';ctx.fillText('No monthly data',w/2,h/2);return;}
+      const max=Math.max(1,...a,...b)*1.12, axes=drawAxes(ctx,w,h,0,max,labels), group=axes.plotW/labels.length, bw=Math.max(3,Math.min(18,group*.28));
+      labels.forEach((_,i)=>{const cx=axes.l+group*(i+.5);[[a[i],-bw-1,'#2563eb'],[b[i],1,'#f59e0b']].forEach(([v,off,c])=>{const y=axes.y(v),base=axes.y(0);ctx.fillStyle=c;ctx.beginPath();ctx.roundRect(cx+off,y,bw,Math.max(1,base-y),3);ctx.fill();});});
+    }
+
+    function drawLine(canvas, labels, data) {
+      const {ctx,w,h}=canvasContext(canvas); ctx.clearRect(0,0,w,h);
+      if(!labels.length){ctx.fillStyle='#7b8799';ctx.textAlign='center';ctx.fillText('No monthly data',w/2,h/2);return;}
+      let min=Math.min(0,...data), max=Math.max(0,...data); if(min===max){max+=1;min-=1;} const margin=(max-min)*.12; max+=margin;min-=margin;
+      const axes=drawAxes(ctx,w,h,min,max,labels), step=axes.plotW/Math.max(1,labels.length);
+      if(min<0&&max>0){ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(axes.l,axes.y(0));ctx.lineTo(w-axes.r,axes.y(0));ctx.stroke();}
+      ctx.strokeStyle='#16a34a';ctx.lineWidth=3;ctx.beginPath();
+      data.forEach((v,i)=>{const x=axes.l+step*(i+.5),y=axes.y(v);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+      data.forEach((v,i)=>{const x=axes.l+step*(i+.5),y=axes.y(v);ctx.fillStyle=v<0?'#dc2626':'#16a34a';ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();});
+    }
+
+    function drawDonut(canvas, groups) {
+      const {ctx,w,h}=canvasContext(canvas);ctx.clearRect(0,0,w,h);const total=groups.reduce((s,x)=>s+x.value,0);
+      if(!total){ctx.fillStyle='#7b8799';ctx.textAlign='center';ctx.fillText('No expenses in this period',w/2,h/2);return;}
+      const cx=w/2,cy=h/2,r=Math.min(w,h)*.34,inner=r*.58;let angle=-Math.PI/2;
+      groups.forEach((g,i)=>{const sweep=g.value/total*Math.PI*2;ctx.beginPath();ctx.arc(cx,cy,r,angle,angle+sweep);ctx.arc(cx,cy,inner,angle+sweep,angle,true);ctx.closePath();ctx.fillStyle=COLORS[i%COLORS.length];ctx.fill();angle+=sweep;});
+      ctx.fillStyle='#152033';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='800 19px system-ui';ctx.fillText(compactNumber(total),cx,cy-7);ctx.fillStyle='#7b8799';ctx.font='11px system-ui';ctx.fillText('expenses',cx,cy+13);
+    }
+
+    function drawCharts(report, summary) {
+      const labels=(report?.columns||[]).slice(1).map(c=>c?.name||'');
+      drawBars($('income-chart'),labels,summary.income.slice(1),summary.expenses.slice(1));
+      drawLine($('profit-chart'),labels,summary.profit.slice(1));
+      drawDonut($('expense-chart'),summary.expenseGroups);
+      $('expense-legend').innerHTML=summary.expenseGroups.map((g,i)=>`<span><i style="background:${COLORS[i%COLORS.length]}"></i>${escapeHtml(g.name)} · ${escapeHtml(money(g.value))}</span>`).join('');
+    }
+
+    function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    function renderRows(rows, depth=0) {
+      let html='';
+      for(const row of rows){
+        const children=items(row?.rows), hasChildren=children.length>0, total=Boolean(row?.isTotalRow), value=at(rowValues(row),0);
+        const classes=[hasChildren?'group':'',total?'total':''].filter(Boolean).join(' ');
+        html+=`<tr class="${classes}" data-depth="${depth}"${collapsed&&depth>0?' hidden':''}><td><div class="row-name"><span class="indent" style="width:${depth*18}px"></span><span class="caret">${hasChildren?'▾':''}</span><span>${escapeHtml(row?.displayName||'')}</span></div></td><td class="amount${value<0?' negative':''}">${escapeHtml(signedMoney(value))}</td></tr>`;
+        if(hasChildren) html+=renderRows(children,depth+1);
+      }
+      return html;
+    }
+
+    function renderDetail(report) {
+      const rows=topRows(report);els.plBody.innerHTML=rows.length?renderRows(rows):'<tr><td colspan="2" class="empty">No P&amp;L rows were returned.</td></tr>';
+    }
+
+    function setChartsVisible(visible) {
+      els.charts.classList.toggle('hidden',!visible);els.chartsToggle.textContent=visible?'Charts On':'Charts Off';els.chartsToggle.classList.toggle('active',visible);
+      localStorage.setItem(PREF_KEY,JSON.stringify({charts:visible}));
+      if(visible&&currentData) requestAnimationFrame(()=>drawCharts(currentData.pl,currentData.summary));
+    }
+
+    function setBusy(busy) {
+      [els.refresh,els.setupBtn,els.applyCustom].forEach(b=>b.disabled=busy);
+    }
+
+    async function loadDashboard() {
+      clearError();setBusy(true);setStatus('busy','Updating Manager reports…');
+      try{
+        const range=getRange();await updateReports(range);setStatus('busy','Loading calculated figures…');
+        const [pl,bs]=await getViews();
+        if(!pl?.rows)throw new Error('Manager returned an empty P&L report.');
+        const summary=summarizePL(pl),cash=findCash(bs);currentData={pl,bs,summary,cash,range};
+        updateKpis(summary,cash,range);renderDetail(pl);els.periodSubtitle.textContent=range.label;els.detailPeriod.textContent=range.label;
+        els.dashboard.classList.remove('hidden');
+        if(!els.charts.classList.contains('hidden'))requestAnimationFrame(()=>drawCharts(pl,summary));
+        setStatus('ok','Up to date');
+      }catch(error){showError(error.message);}finally{setBusy(false);}
+    }
+
+    async function init() {
+      try{
+        const pref=JSON.parse(localStorage.getItem(PREF_KEY)||'{}');if(pref.charts===false)setChartsVisible(false);
+      }catch{}
+      const today=new Date();els.customFrom.value=inputDate(new Date(today.getFullYear(),0,1));els.customTo.value=inputDate(today);
+      clearError();setStatus('busy','Connecting to Manager…');
+      try{
+        const ready=await locateReports();
+        if(!ready){els.setup.classList.remove('hidden');setStatus('ok','Connected · setup required');}
+        else await loadDashboard();
+      }catch(error){showError(error.message);}
+    }
+
+    els.setupBtn.addEventListener('click',setupReports);
+    els.refresh.addEventListener('click',loadDashboard);
+    els.retry.addEventListener('click',init);
+    els.applyCustom.addEventListener('click',loadDashboard);
+    els.period.addEventListener('change',()=>{
+      const custom=els.period.value==='custom';els.customDates.classList.toggle('visible',custom);if(!custom)loadDashboard();
+    });
+    els.chartsToggle.addEventListener('click',()=>setChartsVisible(els.charts.classList.contains('hidden')));
+    els.expand.addEventListener('click',()=>{collapsed=false;if(currentData)renderDetail(currentData.pl);});
+    els.collapse.addEventListener('click',()=>{collapsed=true;if(currentData)renderDetail(currentData.pl);});
+    window.addEventListener('resize',()=>{if(currentData&&!els.charts.classList.contains('hidden'))drawCharts(currentData.pl,currentData.summary);});
+    init();
+  })();
+  </script>
+</body>
+</html>
